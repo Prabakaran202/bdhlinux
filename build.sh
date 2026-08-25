@@ -9,11 +9,13 @@ if [ -z "$TARGET" ]; then
 fi
 
 echo "==============================================="
-echo "  Building BDH Minimal OS for: $TARGET"
+# --- OS NAME CHANGED HERE ---
+echo "  Building BDH Linux for: $TARGET"
 echo "==============================================="
 
 echo "[1/4] Preparing Root Filesystem..."
-rm -rf $ROOTFS initramfs.cpio.gz bdh-os.iso iso/
+# --- ISO NAME CHANGED HERE ---
+rm -rf $ROOTFS initramfs.cpio.gz bdh-linux.iso iso/
 mkdir -p $ROOTFS/{bin,dev,etc,proc,sys,root}
 
 echo "[2/4] Compiling bdh_init.c..."
@@ -66,13 +68,15 @@ if [ "$TARGET" == "laptop" ]; then
     cat <<EOF > iso/boot/grub/grub.cfg
 set timeout=5
 set default=0
-menuentry "BDH Minimal OS (x86_64)" {
+# --- GRUB MENU ENTRY CHANGED HERE ---
+menuentry "BDH Linux (x86_64)" {
     linux /boot/bzImage-x86 console=tty0 init=/init
     initrd /boot/initramfs.cpio.gz
 }
 EOF
-    grub-mkrescue -o bdh-os.iso iso/ 2>/dev/null
-    echo -e "\n✅ Success! 'bdh-os.iso' is ready for Ventoy!"
+    # --- ISO OUTPUT NAME CHANGED HERE ---
+    grub-mkrescue -o bdh-linux.iso iso/ 2>/dev/null
+    echo -e "\n✅ Success! 'bdh-linux.iso' is ready for Ventoy!"
 else
     echo -e "\n✅ Success! ARM OS is ready."
     echo "Run: qemu-system-aarch64 -M virt -cpu cortex-a53 -nographic -kernel bzImage-arm -initrd initramfs.cpio.gz -append \"console=ttyAMA0 init=/init\" -m 256M"
