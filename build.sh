@@ -79,5 +79,6 @@ EOF
     echo -e "\n✅ Success! 'bdh-linux.iso' is ready for Ventoy!"
 else
     echo -e "\n✅ Success! ARM OS is ready."
-    echo "Run: qemu-system-aarch64 -M virt -cpu cortex-a53 -nographic -kernel bzImage-arm -initrd initramfs.cpio.gz -append \"console=ttyAMA0 init=/init\" -m 256M"
+    # --- QEMU NETWORK FLAGS ADDED HERE ---
+    echo "Run: qemu-system-aarch64 -M virt -cpu cortex-a53 -nographic -kernel bzImage-arm -initrd initramfs.cpio.gz -append \"console=ttyAMA0 init=/init\" -m 256M -netdev user,id=net0 -device virtio-net-device,netdev=net0"
 fi
