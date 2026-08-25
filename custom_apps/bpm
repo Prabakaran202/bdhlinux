@@ -1,1 +1,56 @@
 
+#!/bin/sh
+
+# ==========================================
+# BDH Package Manager (BPM)
+# Backend: GitHub Raw User Content
+# ==========================================
+
+# உங்களது GitHub பேக்கேஜ் ரெப்போசிட்டரியின் URL
+REPO_URL="https://raw.githubusercontent.com/Prabakaran202/bdh-packages/main"
+BPM_DB="/etc/bpm/installed.txt"
+
+if [ "$1" = "install" ]; then
+    if [ -z "$2" ]; then
+        echo "Usage: bpm install <package_name>"
+        exit 1
+    fi
+
+    PACKAGE="$2"
+    echo "📦 Searching for '$PACKAGE' in BDH Servers..."
+
+    # ஃபைலை /tmp போல்டரில் டவுன்லோட் செய்கிறோம்
+    wget -q "$REPO_URL/$PACKAGE.tar.gz" -O "/tmp/$PACKAGE.tar.gz"
+
+    if [ $? -eq 0 ]; then
+        echo "⬇️ Downloading '$PACKAGE'..."
+        
+        # டவுன்லோட் ஆன ஃபைலை ரூட் (/) டைரக்டரியில் Extract செய்கிறோம்
+        echo "⚙️ Installing..."
+        cd /
+        tar -xzf "/tmp/$PACKAGE.tar.gz"
+        rm "/tmp/$PACKAGE.tar.gz"
+        
+        # இன்ஸ்டால் ஆனதை டேட்டாபேஸில் குறித்து வைத்துக்கொள்கிறோம்
+        mkdir -p /etc/bpm
+        echo "$PACKAGE" >> "$BPM_DB"
+        
+        echo "✅ '$PACKAGE' Installed Successfully!"
+    else
+        echo "❌ Error: Package '$PACKAGE' not found in BDH repository."
+        rm -f "/tmp/$PACKAGE.tar.gz"
+    fi
+
+elif [ "$1" = "list" ]; then
+    echo "📦 Installed Packages:"
+    if [ -f "$BPM_DB" ]; then
+        cat "$BPM_DB"
+    else
+        echo "No packages installed yet."
+    fi
+else
+    echo "BDH Package Manager (BPM)"
+    echo "Usage:"
+    echo "  bpm install <package>  - Install a new package"
+    echo "  bpm list               - List installed packages"
+fi
