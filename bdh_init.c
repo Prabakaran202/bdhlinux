@@ -47,14 +47,16 @@ int main() {
         waitpid(setup_pid, NULL, 0); 
     }
     
-    // --- AUTOMATIC NETWORK SETUP WITH DRIVERS ---
+    // --- AUTOMATIC NETWORK SETUP WITH STATIC IP ---
     printf("🌐 Initializing Network...\n");
-    system("/bin/modprobe virtio_pci 2>/dev/null"); // <-- NEW: PCI டிரைவரை முதலில் லோட் செய்கிறோம்!
-    system("/bin/modprobe virtio_net 2>/dev/null"); // <-- நெட்வொர்க் கார்டை லோட் செய்கிறோம்!
+    system("/bin/modprobe virtio_pci 2>/dev/null"); 
+    system("/bin/modprobe virtio_net 2>/dev/null"); 
     system("/bin/ifconfig lo up 2>/dev/null");
-    system("/bin/ifconfig eth0 up 2>/dev/null");
-    system("/bin/udhcpc -b 2>/dev/null");
-    system("echo 'nameserver 8.8.8.8' > /etc/resolv.conf"); // <-- NEW: DNS செட்டப் (google.com வேலை செய்ய)
+    
+    // DHCP-க்குக் காத்திருக்காமல் நேரடியாக IP செட் செய்கிறோம்!
+    system("/bin/ifconfig eth0 10.0.2.15 netmask 255.255.255.0 up 2>/dev/null");
+    system("/bin/route add default gw 10.0.2.2 2>/dev/null");
+    system("echo 'nameserver 8.8.8.8' > /etc/resolv.conf"); 
     
     // --- OS NAME CHANGED HERE ---
     printf("======================================\n");
