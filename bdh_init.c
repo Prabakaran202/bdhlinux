@@ -47,12 +47,14 @@ int main() {
         waitpid(setup_pid, NULL, 0); 
     }
     
+    // --- OS NAME CHANGED HERE ---
     printf("======================================\n");
-    printf("  Welcome to BDH Minimal OS\n");
+    printf("  Welcome to BDH Linux\n");
     printf("======================================\n");
 
     while (1) {
-        printf("BDH-OS # ");
+        // --- PROMPT CHANGED HERE ---
+        printf("bdhlinux # ");
         fflush(stdout);
         if (fgets(command, sizeof(command), stdin) == NULL) { clearerr(stdin); continue; }
         command[strcspn(command, "\n")] = 0;
