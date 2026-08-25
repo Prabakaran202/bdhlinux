@@ -47,6 +47,12 @@ int main() {
         waitpid(setup_pid, NULL, 0); 
     }
     
+    // --- AUTOMATIC NETWORK SETUP (For Phone & Laptop) ---
+    printf("🌐 Initializing Network...\n");
+    system("/bin/ifconfig lo up 2>/dev/null");   // லோக்கல் நெட்வொர்க்கை ஆன் செய்ய
+    system("/bin/ifconfig eth0 up 2>/dev/null"); // லேப்டாப்/QEMU ஈதர்நெட்டை ஆன் செய்ய
+    system("/bin/udhcpc -b 2>/dev/null");        // IP அட்ரஸை வாங்க
+    
     // --- OS NAME CHANGED HERE ---
     printf("======================================\n");
     printf("  Welcome to BDH Linux\n");
