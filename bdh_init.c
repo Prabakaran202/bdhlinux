@@ -49,10 +49,12 @@ int main() {
     
     // --- AUTOMATIC NETWORK SETUP WITH DRIVERS ---
     printf("🌐 Initializing Network...\n");
-    system("/bin/modprobe virtio_net 2>/dev/null"); // டிரைவரை லோட் செய்கிறோம்!
+    system("/bin/modprobe virtio_pci 2>/dev/null"); // <-- NEW: PCI டிரைவரை முதலில் லோட் செய்கிறோம்!
+    system("/bin/modprobe virtio_net 2>/dev/null"); // <-- நெட்வொர்க் கார்டை லோட் செய்கிறோம்!
     system("/bin/ifconfig lo up 2>/dev/null");
     system("/bin/ifconfig eth0 up 2>/dev/null");
     system("/bin/udhcpc -b 2>/dev/null");
+    system("echo 'nameserver 8.8.8.8' > /etc/resolv.conf"); // <-- NEW: DNS செட்டப் (google.com வேலை செய்ய)
     
     // --- OS NAME CHANGED HERE ---
     printf("======================================\n");
