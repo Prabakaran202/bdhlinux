@@ -14,7 +14,7 @@ echo "==============================================="
 
 echo "[1/4] Preparing Root Filesystem..."
 rm -rf $ROOTFS initramfs.cpio.gz bdh-linux.iso iso/
-mkdir -p $ROOTFS/{bin,dev,etc,proc,sys,root,lib}
+mkdir -p $ROOTFS/{bin,dev,etc,proc,sys,root,lib,home}
 
 echo "[2/4] Compiling bdh_init.c..."
 if command -v proot-distro &> /dev/null; then
@@ -56,20 +56,25 @@ elif [ "$TARGET" == "phone" ]; then
     echo "   -> Fetching official static BusyBox from Alpine..."
     proot-distro login alpine -- sh -c "apk add --quiet busybox-static && cp /bin/busybox.static $PWD/$ROOTFS/bin/busybox"
     chmod +x $ROOTFS/bin/busybox
-else
-    echo "Error: Invalid target! Use 'phone' or 'laptop'."
-    exit 1
 fi
 
 echo "[3.5/4] Adding Custom Apps (BDH Terminal Engine)..."
 if [ -d "custom_apps" ]; then
     cp -r custom_apps/* $ROOTFS/bin/
+    chmod +x $ROOTFS/bin/bpm 2>/dev/null
 fi
 
-echo "[4/4] Packing initramfs..."
-cd $ROOTFS
-find . | cpio -ov -H newc | gzip -9 > ../initramfs.cpio.gz 2>/dev/null
-cd ..
+# --- THE MAGIC ROOT FIX IS HERE ---
+echo "[4/4] Packing initramfs as TRUE ROOT (UID 0:0)..."
+if command -v proot-distro &> /dev/null; then
+    proot-distro login alpine -- sh -c "cd $PWD/$ROOTFS && chown -R 0:0 . && chmod 4755 bin/busybox && find . | cpio -ov -H newc | gzip -9 > ../initramfs.cpio.gz" 2>/dev/null
+else
+    cd $ROOTFS
+    chown -R 0:0 . 2>/dev/null
+    chmod 4755 bin/busybox 2>/dev/null
+    find . | cpio -ov -H newc | gzip -9 > ../initramfs.cpio.gz 2>/dev/null
+    cd ..
+fi
 
 if [ "$TARGET" == "laptop" ]; then
     echo "Creating Bootable ISO for Laptop..."
@@ -88,6 +93,5 @@ EOF
     echo -e "\n✅ Success! 'bdh-linux.iso' is ready for Ventoy!"
 else
     echo -e "\n✅ Success! ARM OS is ready."
-    # --- QEMU PCI NETWORK FLAG CHANGED HERE ---
     echo "Run: qemu-system-aarch64 -M virt -cpu cortex-a53 -nographic -kernel bzImage-arm -initrd initramfs.cpio.gz -append \"console=ttyAMA0 init=/init\" -m 256M -netdev user,id=net0 -device virtio-net-pci,netdev=net0"
 fi
