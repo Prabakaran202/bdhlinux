@@ -31,11 +31,17 @@ int main() {
         fclose(bash_script);
         chmod("/bin/bash", 0755);
     }
-    FILE *zsh_script = fopen("/bin/zsh", "w");
-    if (zsh_script) {
-        fprintf(zsh_script, "#!/bin/sh\nexec /bin/sh \"$@\"\n");
-        fclose(zsh_script);
-        chmod("/bin/zsh", 0755);
+    
+    // --- THE NEW BDH SUPER WRAPPER ---
+    // இது ஒவ்வொரு முறையும் எஞ்சினைத் திறக்கும் முன் அளவைச் சரியாக செட் செய்துவிடும்!
+    FILE *bdh_wrapper = fopen("/bin/bdh", "w");
+    if (bdh_wrapper) {
+        fprintf(bdh_wrapper, "#!/bin/sh\n"
+                             "eval $(/bin/resize 2>/dev/null)\n"
+                             "stty rows $LINES cols $COLUMNS 2>/dev/null\n"
+                             "exec /bin/bdh-engine \"$@\"\n");
+        fclose(bdh_wrapper);
+        chmod("/bin/bdh", 0755);
     }
 
     pid_t setup_pid = fork();
@@ -57,10 +63,6 @@ int main() {
     system("/bin/ifconfig eth0 10.0.2.15 netmask 255.255.255.0 up 2>/dev/null");
     system("/bin/route add default gw 10.0.2.2 2>/dev/null");
     system("echo 'nameserver 8.8.8.8' > /etc/resolv.conf"); 
-    
-    // --- TRUE DYNAMIC TERMINAL RESIZE (Auto for ALL Devices) ---
-    printf("📺 Auto-detecting actual screen size...\n");
-    system("/bin/resize > /dev/null 2>&1");
 
     // --- OS NAME CHANGED HERE ---
     printf("======================================\n");
