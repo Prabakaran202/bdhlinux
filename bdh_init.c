@@ -58,6 +58,12 @@ int main() {
     system("/bin/route add default gw 10.0.2.2 2>/dev/null");
     system("echo 'nameserver 8.8.8.8' > /etc/resolv.conf"); 
     
+    // --- AUTOMATIC TERMINAL RESIZE FIX ---
+    printf("📺 Setting Default Terminal Size...\n");
+    system("/bin/stty rows 30 cols 100 2>/dev/null");
+    setenv("COLUMNS", "100", 1);
+    setenv("LINES", "30", 1);
+
     // --- OS NAME CHANGED HERE ---
     printf("======================================\n");
     printf("  Welcome to BDH Linux\n");
