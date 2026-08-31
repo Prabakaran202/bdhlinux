@@ -59,9 +59,27 @@ elif [ "$TARGET" == "phone" ]; then
 fi
 
 echo "[3.5/4] Adding Custom Apps (BDH Terminal Engine)..."
+# --- BDH ENGINE AUTO-BUILD START ---
+echo "   -> Auto-compiling BDH Terminal Engine (Static) via Alpine..."
+if [ ! -d "$HOME/bdh-terminal-engine" ]; then
+    git clone https://github.com/BackendDeveloperHub/bdh-terminal-engine.git $HOME/bdh-terminal-engine
+fi
+
+if command -v proot-distro &> /dev/null; then
+    proot-distro login alpine -- sh -c "cd $HOME/bdh-terminal-engine && gcc -static -Isrc -D_GNU_SOURCE src/main.c src/engine/*.c src/ui/*.c -o bdh-engine"
+else
+    cd $HOME/bdh-terminal-engine && gcc -static -Isrc -D_GNU_SOURCE src/main.c src/engine/*.c src/ui/*.c -o bdh-engine
+    cd - > /dev/null
+fi
+
+mkdir -p custom_apps
+cp $HOME/bdh-terminal-engine/bdh-engine custom_apps/
+# --- BDH ENGINE AUTO-BUILD END ---
+
 if [ -d "custom_apps" ]; then
     cp -r custom_apps/* $ROOTFS/bin/
     chmod +x $ROOTFS/bin/bpm 2>/dev/null
+    chmod +x $ROOTFS/bin/bdh-engine 2>/dev/null
 fi
 
 # --- THE MAGIC ROOT FIX IS HERE ---
