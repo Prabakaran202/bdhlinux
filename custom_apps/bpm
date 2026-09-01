@@ -1,9 +1,8 @@
 #!/bin/sh
 # BPM - BDH Package Manager (Yay Style)
 
-# உங்களது GitHub Username-ஐ இங்கே கண்டிப்பாக மாற்றவும்!
+# உங்களது GitHub Username மற்றும் புதிய Repo Name
 GITHUB_USER="BackendDeveloperHub"
-#https://github.com/BackendDeveloperHub/bdh-pkg
 REPO_URL="https://raw.githubusercontent.com/$GITHUB_USER/bdh-pkg/main"
 DB_FILE="/tmp/packages.txt"
 
@@ -45,7 +44,8 @@ if [ "$1" = "-S" ]; then
     echo -e "${B}::${W} Resolving dependencies for ${G}$2${W}..."
     echo -e "${B}::${W} Downloading from BDH Repository..."
     
-    wget -q --show-progress -O "/bin/$2" "$REPO_URL/bin/$2"
+    # திருத்தப்பட்ட லைன்: --show-progress நீக்கப்பட்டது
+    wget -q -O "/bin/$2" "$REPO_URL/bin/$2"
     
     if [ $? -eq 0 ]; then
         chmod +x "/bin/$2"
