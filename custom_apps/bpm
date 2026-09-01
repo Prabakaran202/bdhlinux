@@ -1,16 +1,15 @@
 #!/bin/sh
 # BPM - BDH Package Manager (Yay Style)
 
-# உங்களது GitHub Username மற்றும் புதிய Repo Name
 GITHUB_USER="BackendDeveloperHub"
-REPO_URL="https://raw.githubusercontent.com/$GITHUB_USER/bdh-pkg/main"
+# மாஸ்டர் பிளான்: GitHub-க்கு பதிலாக JSDelivr CDN-ஐப் பயன்படுத்துகிறோம்
+REPO_URL="http://cdn.jsdelivr.net/gh/$GITHUB_USER/bdh-pkg@main"
 DB_FILE="/tmp/packages.txt"
 
-# Yay Colors
-B="\033[1;34m"  # Blue
-G="\033[1;32m"  # Green
-R="\033[1;31m"  # Red
-W="\033[0m"     # Reset/White
+B="\033[1;34m"
+G="\033[1;32m"
+R="\033[1;31m"
+W="\033[0m"
 
 if [ -z "$1" ]; then
     echo -e "${B}::${W} BPM (BDH Package Manager) - Arch Style"
@@ -23,7 +22,7 @@ fi
 if [ "$1" = "-Syu" ]; then
     echo -e "${B}::${W} Synchronizing package databases..."
     wget -q -O "$DB_FILE" "$REPO_URL/packages.txt"
-    if [ $? -eq 0 ]; then
+    if [ -s "$DB_FILE" ]; then
         echo -e "${G}==>${W} Database updated successfully."
     else
         echo -e "${R}==>${W} Failed to fetch repository."
@@ -44,14 +43,14 @@ if [ "$1" = "-S" ]; then
     echo -e "${B}::${W} Resolving dependencies for ${G}$2${W}..."
     echo -e "${B}::${W} Downloading from BDH Repository..."
     
-    # திருத்தப்பட்ட லைன்: --show-progress நீக்கப்பட்டது
     wget -q -O "/bin/$2" "$REPO_URL/bin/$2"
     
-    if [ $? -eq 0 ]; then
+    # ஃபைல் நிஜமாகவே டவுன்லோட் ஆகியுள்ளதா என செக் செய்கிறோம்
+    if [ -s "/bin/$2" ]; then
         chmod +x "/bin/$2"
         echo -e "${G}==>${W} Successfully installed $2!"
     else
-        echo -e "${R}==>${W} Error: Package '$2' not found in repository."
+        echo -e "${R}==>${W} Error: Package '$2' not found or failed to download."
         rm -f "/bin/$2"
     fi
     exit 0
