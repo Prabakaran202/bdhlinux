@@ -1,56 +1,57 @@
-
 #!/bin/sh
+# BPM - BDH Package Manager (Yay Style)
 
-# ==========================================
-# BDH Package Manager (BPM)
-# Backend: GitHub Raw User Content
-# ==========================================
+# உங்களது GitHub Username-ஐ இங்கே கண்டிப்பாக மாற்றவும்!
+GITHUB_USER="Backenddeveloperhub"
+REPO_URL="https://raw.githubusercontent.com/$GITHUB_USER/bdh-pkg/main"
+DB_FILE="/tmp/packages.txt"
 
-# உங்களது GitHub பேக்கேஜ் ரெப்போசிட்டரியின் URL
-REPO_URL="https://raw.githubusercontent.com/Prabakaran202/bdh-packages/main"
-BPM_DB="/etc/bpm/installed.txt"
+# Yay Colors
+B="\033[1;34m"  # Blue
+G="\033[1;32m"  # Green
+R="\033[1;31m"  # Red
+W="\033[0m"     # Reset/White
 
-if [ "$1" = "install" ]; then
-    if [ -z "$2" ]; then
-        echo "Usage: bpm install <package_name>"
-        exit 1
-    fi
+if [ -z "$1" ]; then
+    echo -e "${B}::${W} BPM (BDH Package Manager) - Arch Style"
+    echo "  bpm -S <app>   : Install Package"
+    echo "  bpm -Syu       : Update Database"
+    echo "  bpm -Ss <app>  : Search Package"
+    exit 1
+fi
 
-    PACKAGE="$2"
-    echo "📦 Searching for '$PACKAGE' in BDH Servers..."
-
-    # ஃபைலை /tmp போல்டரில் டவுன்லோட் செய்கிறோம்
-    wget -q "$REPO_URL/$PACKAGE.tar.gz" -O "/tmp/$PACKAGE.tar.gz"
-
+if [ "$1" = "-Syu" ]; then
+    echo -e "${B}::${W} Synchronizing package databases..."
+    wget -q -O "$DB_FILE" "$REPO_URL/packages.txt"
     if [ $? -eq 0 ]; then
-        echo "⬇️ Downloading '$PACKAGE'..."
-        
-        # டவுன்லோட் ஆன ஃபைலை ரூட் (/) டைரக்டரியில் Extract செய்கிறோம்
-        echo "⚙️ Installing..."
-        cd /
-        tar -xzf "/tmp/$PACKAGE.tar.gz"
-        rm "/tmp/$PACKAGE.tar.gz"
-        
-        # இன்ஸ்டால் ஆனதை டேட்டாபேஸில் குறித்து வைத்துக்கொள்கிறோம்
-        mkdir -p /etc/bpm
-        echo "$PACKAGE" >> "$BPM_DB"
-        
-        echo "✅ '$PACKAGE' Installed Successfully!"
+        echo -e "${G}==>${W} Database updated successfully."
     else
-        echo "❌ Error: Package '$PACKAGE' not found in BDH repository."
-        rm -f "/tmp/$PACKAGE.tar.gz"
+        echo -e "${R}==>${W} Failed to fetch repository."
     fi
+    exit 0
+fi
 
-elif [ "$1" = "list" ]; then
-    echo "📦 Installed Packages:"
-    if [ -f "$BPM_DB" ]; then
-        cat "$BPM_DB"
+if [ "$1" = "-Ss" ]; then
+    if [ ! -f "$DB_FILE" ]; then echo -e "${R}==>${W} Database not found! Run 'bpm -Syu' first."; exit 1; fi
+    echo -e "${B}::${W} Searching for '$2'..."
+    grep -i "$2" "$DB_FILE"
+    exit 0
+fi
+
+if [ "$1" = "-S" ]; then
+    if [ -z "$2" ]; then echo -e "${R}==>${W} Error: No package specified."; exit 1; fi
+    
+    echo -e "${B}::${W} Resolving dependencies for ${G}$2${W}..."
+    echo -e "${B}::${W} Downloading from BDH Repository..."
+    
+    wget -q --show-progress -O "/bin/$2" "$REPO_URL/bin/$2"
+    
+    if [ $? -eq 0 ]; then
+        chmod +x "/bin/$2"
+        echo -e "${G}==>${W} Successfully installed $2!"
     else
-        echo "No packages installed yet."
+        echo -e "${R}==>${W} Error: Package '$2' not found in repository."
+        rm -f "/bin/$2"
     fi
-else
-    echo "BDH Package Manager (BPM)"
-    echo "Usage:"
-    echo "  bpm install <package>  - Install a new package"
-    echo "  bpm list               - List installed packages"
+    exit 0
 fi
