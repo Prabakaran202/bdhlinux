@@ -1,9 +1,9 @@
 #!/bin/sh
-# BPM - BDH Package Manager (Yay Style)
+# BPM - BDH Package Manager (Secure Version)
 
 GITHUB_USER="BackendDeveloperHub"
-# மாஸ்டர் பிளான்: GitHub-க்கு பதிலாக JSDelivr CDN-ஐப் பயன்படுத்துகிறோம்
-REPO_URL="http://cdn.jsdelivr.net/gh/$GITHUB_USER/bdh-pkg@main"
+# [SECURITY FIX 1] HTTP மாற்றப்பட்டு HTTPS ஆக்கப்பட்டுள்ளது
+REPO_URL="https://cdn.jsdelivr.net/gh/$GITHUB_USER/bdh-pkg@main"
 DB_FILE="/tmp/packages.txt"
 
 B="\033[1;34m"
@@ -16,6 +16,7 @@ if [ -z "$1" ]; then
     echo "  bpm -S <app>   : Install Package"
     echo "  bpm -Syu       : Update Database"
     echo "  bpm -Ss <app>  : Search Package"
+    echo "  bpm -R <app>   : Remove Package"
     exit 1
 fi
 
@@ -37,27 +38,38 @@ if [ "$1" = "-Ss" ]; then
     exit 0
 fi
 
+# புதிய Remove (Uninstall) ஆப்ஷன்
+if [ "$1" = "-R" ]; then
+    if [ -z "$2" ]; then echo -e "${R}==>${W} Error: No package specified."; exit 1; fi
+    rm -f "/bdh_drive/apps/$2" "/bin/$2"
+    echo -e "${G}==>${W} Successfully removed $2!"
+    exit 0
+fi
+
 if [ "$1" = "-S" ]; then
     if [ -z "$2" ]; then echo -e "${R}==>${W} Error: No package specified."; exit 1; fi
     
+    # [SECURITY FIX 2] Path Traversal தடுப்பு (பெயரில் / அல்லது .. இருந்தால் தடுக்கப்படும்)
+    case "$2" in
+        */*|*..*) echo -e "${R}==>${W} Error: Invalid package name."; exit 1;;
+    esac
+    
     echo -e "${B}::${W} Resolving dependencies for ${G}$2${W}..."
-    
-    # [புதிய மாற்றம்] ஆப்ஸ்களை சேமிக்க நிரந்தர போல்டரை உருவாக்குதல்
     mkdir -p /bdh_drive/apps
-    
     echo -e "${B}::${W} Downloading from BDH Repository..."
     
-    # [புதிய மாற்றம்] ஃபைலை அழியாத டிஸ்க்கில் டவுன்லோட் செய்கிறோம்
-    wget -q -O "/bdh_drive/apps/$2" "$REPO_URL/bin/$2"
-    
-    # ஃபைல் நிஜமாகவே டவுன்லோட் ஆகியுள்ளதா என செக் செய்கிறோம்
-    if [ -s "/bdh_drive/apps/$2" ]; then
-        chmod +x "/bdh_drive/apps/$2"
-        # [புதிய மாற்றம்] OS-க்காக ஷார்ட்கட் (Symlink) உருவாக்குகிறோம்
-        ln -sf "/bdh_drive/apps/$2" "/bin/$2"
-        echo -e "${G}==>${W} Successfully installed $2 (Persistent)!"
+    # [SECURITY FIX 3] Wget 100% வெற்றி பெற்றதா என உறுதி செய்தல்
+    if wget -q -O "/bdh_drive/apps/$2" "$REPO_URL/bin/$2"; then
+        if [ -s "/bdh_drive/apps/$2" ]; then
+            chmod +x "/bdh_drive/apps/$2"
+            ln -sf "/bdh_drive/apps/$2" "/bin/$2"
+            echo -e "${G}==>${W} Successfully installed $2 (Persistent)!"
+        else
+            echo -e "${R}==>${W} Error: Package '$2' is empty on server."
+            rm -f "/bdh_drive/apps/$2"
+        fi
     else
-        echo -e "${R}==>${W} Error: Package '$2' not found or failed to download."
+        echo -e "${R}==>${W} Error: Failed to download '$2'. Check network or package name."
         rm -f "/bdh_drive/apps/$2"
     fi
     exit 0
