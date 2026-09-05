@@ -9,6 +9,15 @@
 #define MAX_CMD_LEN 100
 #define MAX_ARGS 10
 
+// --- PASSWORD HASHING FUNCTION (SECURITY FIX) ---
+unsigned long hash_pass(const char *str) {
+    unsigned long hash = 5381;
+    int c;
+    while ((c = *str++))
+        hash = ((hash << 5) + hash) + c; 
+    return hash;
+}
+
 int main() {
     char command[MAX_CMD_LEN];
     char *args[MAX_ARGS];
@@ -21,7 +30,6 @@ int main() {
     mkdir("/dev/pts", 0755);
     if (mount("devpts", "/dev/pts", "devpts", 0, NULL) != 0) printf("Warning: Failed to mount /dev/pts\n");
 
-    // Wrapper Scripts (The Master Fix)
     setenv("TERM", "linux", 1);
     setenv("PATH", "/bin:/sbin:/usr/bin:/usr/sbin", 1);
 
@@ -32,7 +40,6 @@ int main() {
         chmod("/bin/bash", 0755);
     }
     
-    // --- THE NEW BDH SUPER WRAPPER ---
     FILE *bdh_wrapper = fopen("/bin/bdh", "w");
     if (bdh_wrapper) {
         fprintf(bdh_wrapper, "#!/bin/sh\n"
@@ -52,11 +59,9 @@ int main() {
         waitpid(setup_pid, NULL, 0); 
     }
     
-    // --- AUTOMATIC NETWORK & DISK DRIVERS SETUP ---
     printf("Initializing Network and Drivers...\n");
     system("/bin/modprobe virtio_pci 2>/dev/null"); 
     system("/bin/modprobe virtio_net 2>/dev/null"); 
-    
     system("/bin/modprobe virtio_blk 2>/dev/null"); 
     system("/bin/modprobe ext4 2>/dev/null");
     system("/bin/modprobe ext2 2>/dev/null");
@@ -66,7 +71,6 @@ int main() {
     system("/bin/route add default gw 10.0.2.2 2>/dev/null");
     system("echo 'nameserver 8.8.8.8' > /etc/resolv.conf"); 
 
-    // --- AUTOMATIC PERSISTENT DISK MOUNT & SYMLINK RESTORE ---
     printf("Initializing Persistent Storage...\n");
     system("mkdir -p /bdh_drive");
     
@@ -79,13 +83,12 @@ int main() {
     system("mkdir -p /bdh_drive/apps");
     system("ln -sf /bdh_drive/apps/* /bin/ 2>/dev/null");
 
-    // --- OS NAME CHANGED HERE ---
     printf("\n======================================\n");
-    printf("  Welcome to BDH Linux\n");
+    printf("  Welcome to BDH Linux (Secured)\n");
     printf("======================================\n");
 
-    // --- NEW DYNAMIC LOGIN SYSTEM (FIXED CRASH) ---
-    char saved_pass[50] = {0};
+    // --- SECURE HASHED LOGIN SYSTEM ---
+    unsigned long saved_hash = 0;
     FILE *pf = fopen("/bdh_drive/root_pass.txt", "r");
     
     if (pf == NULL) {
@@ -107,10 +110,10 @@ int main() {
             if (strcmp(temp_pass, confirm) == 0 && strlen(temp_pass) > 0) {
                 pf = fopen("/bdh_drive/root_pass.txt", "w");
                 if(pf) {
-                    fprintf(pf, "%s", temp_pass);
+                    saved_hash = hash_pass(temp_pass);
+                    fprintf(pf, "%lu", saved_hash); // Hashed value only saved
                     fclose(pf);
-                    strcpy(saved_pass, temp_pass);
-                    printf("Password saved securely!\n\n");
+                    printf("Password saved securely (Encrypted)!\n\n");
                     break;
                 }
             } else {
@@ -118,9 +121,8 @@ int main() {
             }
         }
     } else {
-        fgets(saved_pass, sizeof(saved_pass), pf);
+        fscanf(pf, "%lu", &saved_hash);
         fclose(pf);
-        saved_pass[strcspn(saved_pass, "\n")] = 0;
     }
 
     int logged_in = 0;
@@ -141,7 +143,8 @@ int main() {
         if (fgets(pass, sizeof(pass), stdin) == NULL) continue;
         pass[strcspn(pass, "\n")] = 0;
         
-        if (strcmp(username, "root") == 0 && strcmp(pass, saved_pass) == 0) {
+        // Comparing entered password's hash with saved hash
+        if (strcmp(username, "root") == 0 && hash_pass(pass) == saved_hash) {
             printf("\nLast login: Today on ttyAMA0\n");
             logged_in = 1;
         } else {
@@ -151,7 +154,6 @@ int main() {
     // -------------------------
 
     while (1) {
-        // --- PROMPT CHANGED HERE ---
         printf("\n[root@bdhlinux ~]# ");
         fflush(stdout);
         if (fgets(command, sizeof(command), stdin) == NULL) { clearerr(stdin); continue; }
