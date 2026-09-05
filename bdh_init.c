@@ -84,18 +84,26 @@ int main() {
     printf("  Welcome to BDH Linux\n");
     printf("======================================\n");
 
-    // --- NEW DYNAMIC LOGIN SYSTEM ---
+    // --- NEW DYNAMIC LOGIN SYSTEM (FIXED CRASH) ---
     char saved_pass[50] = {0};
     FILE *pf = fopen("/bdh_drive/root_pass.txt", "r");
     
     if (pf == NULL) {
         printf("\n[ First Boot: Setup Root Password ]\n");
         while (1) {
-            char *new_pass = getpass("Set Root Password: ");
             char temp_pass[50];
-            strcpy(temp_pass, new_pass);
+            char confirm[50];
             
-            char *confirm = getpass("Retype Password: ");
+            printf("Set Root Password: ");
+            fflush(stdout);
+            if (fgets(temp_pass, sizeof(temp_pass), stdin) == NULL) continue;
+            temp_pass[strcspn(temp_pass, "\n")] = 0;
+            
+            printf("Retype Password: ");
+            fflush(stdout);
+            if (fgets(confirm, sizeof(confirm), stdin) == NULL) continue;
+            confirm[strcspn(confirm, "\n")] = 0;
+            
             if (strcmp(temp_pass, confirm) == 0 && strlen(temp_pass) > 0) {
                 pf = fopen("/bdh_drive/root_pass.txt", "w");
                 if(pf) {
@@ -117,6 +125,7 @@ int main() {
 
     int logged_in = 0;
     char username[50];
+    char pass[50];
     
     while (!logged_in) {
         printf("bdhlinux login: ");
@@ -127,7 +136,10 @@ int main() {
         
         if (strlen(username) == 0) continue;
 
-        char *pass = getpass("Password: ");
+        printf("Password: ");
+        fflush(stdout);
+        if (fgets(pass, sizeof(pass), stdin) == NULL) continue;
+        pass[strcspn(pass, "\n")] = 0;
         
         if (strcmp(username, "root") == 0 && strcmp(pass, saved_pass) == 0) {
             printf("\nLast login: Today on ttyAMA0\n");
