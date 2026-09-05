@@ -41,17 +41,24 @@ if [ "$1" = "-S" ]; then
     if [ -z "$2" ]; then echo -e "${R}==>${W} Error: No package specified."; exit 1; fi
     
     echo -e "${B}::${W} Resolving dependencies for ${G}$2${W}..."
+    
+    # [புதிய மாற்றம்] ஆப்ஸ்களை சேமிக்க நிரந்தர போல்டரை உருவாக்குதல்
+    mkdir -p /bdh_drive/apps
+    
     echo -e "${B}::${W} Downloading from BDH Repository..."
     
-    wget -q -O "/bin/$2" "$REPO_URL/bin/$2"
+    # [புதிய மாற்றம்] ஃபைலை அழியாத டிஸ்க்கில் டவுன்லோட் செய்கிறோம்
+    wget -q -O "/bdh_drive/apps/$2" "$REPO_URL/bin/$2"
     
     # ஃபைல் நிஜமாகவே டவுன்லோட் ஆகியுள்ளதா என செக் செய்கிறோம்
-    if [ -s "/bin/$2" ]; then
-        chmod +x "/bin/$2"
-        echo -e "${G}==>${W} Successfully installed $2!"
+    if [ -s "/bdh_drive/apps/$2" ]; then
+        chmod +x "/bdh_drive/apps/$2"
+        # [புதிய மாற்றம்] OS-க்காக ஷார்ட்கட் (Symlink) உருவாக்குகிறோம்
+        ln -sf "/bdh_drive/apps/$2" "/bin/$2"
+        echo -e "${G}==>${W} Successfully installed $2 (Persistent)!"
     else
         echo -e "${R}==>${W} Error: Package '$2' not found or failed to download."
-        rm -f "/bin/$2"
+        rm -f "/bdh_drive/apps/$2"
     fi
     exit 0
 fi
