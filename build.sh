@@ -108,9 +108,9 @@ menuentry "BDH Linux (x86_64)" {
 }
 EOF
     grub-mkrescue -o bdh-linux.iso iso/ 2>/dev/null
-    echo -e "\n✅ Success! 'bdh-linux.iso' is ready for Ventoy!"
+    echo -e "\nSuccess! 'bdh-linux.iso' is ready for Ventoy!"
 else
-    echo -e "\n✅ Success! ARM OS is ready."
+    echo -e "\nSuccess! ARM OS is ready."
     
     # --- AUTO-GENERATE LAUNCHER SCRIPT ---
     echo "   -> Creating launcher script (start_bdh.sh)..."
@@ -120,12 +120,22 @@ echo "Starting BDH Linux (ARM Environment)..."
 
 if [ ! -f "bdh_disk.img" ]; then
     echo "First boot detected. Creating 512MB Persistence Disk..."
+    
+    # mke2fs டூல் இல்லை என்றால் ஆட்டோமேட்டிக்காக இன்ஸ்டால் செய்யும்
+    if command -v pkg &> /dev/null && ! command -v mke2fs &> /dev/null; then
+        echo "Installing required disk tools (e2fsprogs)..."
+        pkg install e2fsprogs -y > /dev/null 2>&1
+    fi
+    
+    # டிஸ்க்கை உருவாக்கி ext2 ஃபார்மேட்டிற்கு மாற்றும்
     dd if=/dev/zero of=bdh_disk.img bs=1M count=512 status=none
+    echo "Formatting disk as ext2..."
+    mke2fs -t ext2 -F bdh_disk.img > /dev/null 2>&1
 fi
 
 qemu-system-aarch64 -M virt -cpu cortex-a53 -nographic -kernel bzImage-arm -initrd initramfs.cpio.gz -append "console=ttyAMA0 init=/init" -m 256M -netdev user,id=net0 -device virtio-net-pci,netdev=net0 -drive file=bdh_disk.img,format=raw,if=virtio
 EOF
     
     chmod +x start_bdh.sh
-    echo -e "✅ Launcher ready! Just run: ./start_bdh.sh"
+    echo -e "Launcher ready! Just run: ./start_bdh.sh"
 fi
