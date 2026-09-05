@@ -33,7 +33,6 @@ int main() {
     }
     
     // --- THE NEW BDH SUPER WRAPPER ---
-    // இது ஒவ்வொரு முறையும் எஞ்சினைத் திறக்கும் முன் அளவைச் சரியாக செட் செய்துவிடும்!
     FILE *bdh_wrapper = fopen("/bin/bdh", "w");
     if (bdh_wrapper) {
         fprintf(bdh_wrapper, "#!/bin/sh\n"
@@ -54,15 +53,30 @@ int main() {
     }
     
     // --- AUTOMATIC NETWORK SETUP WITH STATIC IP ---
-    printf("🌐 Initializing Network...\n");
+    printf("Initializing Network...\n");
     system("/bin/modprobe virtio_pci 2>/dev/null"); 
     system("/bin/modprobe virtio_net 2>/dev/null"); 
     system("/bin/ifconfig lo up 2>/dev/null");
     
-    // DHCP-க்குக் காத்திருக்காமல் நேரடியாக IP செட் செய்கிறோம்!
     system("/bin/ifconfig eth0 10.0.2.15 netmask 255.255.255.0 up 2>/dev/null");
     system("/bin/route add default gw 10.0.2.2 2>/dev/null");
     system("echo 'nameserver 8.8.8.8' > /etc/resolv.conf"); 
+
+    // --- AUTOMATIC PERSISTENT DISK MOUNT & SYMLINK RESTORE ---
+    printf("Initializing Persistent Storage...\n");
+    system("mkdir -p /bdh_drive");
+    
+    // டிஸ்க் ஃபார்மேட் ஆகியுள்ளதா என மவுண்ட் செய்து பார்க்கிறோம்
+    if (system("mount -t ext2 /dev/vda /bdh_drive 2>/dev/null") != 0) {
+        printf("   -> Formatting new virtual disk...\n");
+        system("/bin/mkfs.ext2 /dev/vda 2>/dev/null");
+        system("mount -t ext2 /dev/vda /bdh_drive 2>/dev/null");
+    }
+    
+    // BPM ஆப்ஸ்களுக்கான போல்டரை உறுதி செய்து, ஷார்ட்கட்டுகளை ரீஸ்டோர் செய்கிறோம்
+    system("mkdir -p /bdh_drive/apps");
+    system("ln -sf /bdh_drive/apps/* /bin/ 2>/dev/null");
+    // ---------------------------------------------------------
 
     // --- OS NAME CHANGED HERE ---
     printf("======================================\n");
