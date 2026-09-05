@@ -1,8 +1,7 @@
 #!/bin/sh
-# BPM - BDH Package Manager (Direct GitHub Version)
+# BPM - BDH Package Manager (Working Version)
 
 GITHUB_USER="BackendDeveloperHub"
-# JSDelivr-க்கு பதிலாக நேரடியாக GitHub Raw லிங்க் பயன்படுத்தப்பட்டுள்ளது
 REPO_URL="https://raw.githubusercontent.com/$GITHUB_USER/bdh-pkg/main"
 DB_FILE="/tmp/packages.txt"
 
@@ -22,15 +21,11 @@ fi
 
 if [ "$1" = "-Syu" ]; then
     echo -e "${B}::${W} Synchronizing package databases..."
-    # 2>/dev/null கொடுப்பதன் மூலம் TLS வார்னிங் திரையில் வராமல் மறைக்கப்படும்
-    if wget -q -O "$DB_FILE" "$REPO_URL/packages.txt" 2>/dev/null; then
-        if [ -s "$DB_FILE" ]; then
-            echo -e "${G}==>${W} Database updated successfully."
-        else
-            echo -e "${R}==>${W} Error: packages.txt is empty on server."
-        fi
+    wget -q -O "$DB_FILE" "$REPO_URL/packages.txt" 2>/dev/null
+    if [ -s "$DB_FILE" ]; then
+        echo -e "${G}==>${W} Database updated successfully."
     else
-        echo -e "${R}==>${W} Failed to fetch repository. Check Network."
+        echo -e "${R}==>${W} Error: packages.txt is empty or failed to download."
     fi
     exit 0
 fi
@@ -60,16 +55,14 @@ if [ "$1" = "-S" ]; then
     mkdir -p /bdh_drive/apps
     echo -e "${B}::${W} Downloading from BDH Repository..."
     
-    # நேரடி GitHub லிங்கில் இருந்து டவுன்லோட் செய்கிறோம்
-    if wget -q -O "/bdh_drive/apps/$2" "$REPO_URL/bin/$2" 2>/dev/null; then
-        if [ -s "/bdh_drive/apps/$2" ]; then
-            chmod +x "/bdh_drive/apps/$2"
-            ln -sf "/bdh_drive/apps/$2" "/bin/$2"
-            echo -e "${G}==>${W} Successfully installed $2 (Persistent)!"
-        else
-            echo -e "${R}==>${W} Error: Package '$2' is empty on server."
-            rm -f "/bdh_drive/apps/$2"
-        fi
+    # wget-ன் ரிசல்ட் கோடை செக் செய்யாமல் நேரடியாக ரன் செய்கிறோம்
+    wget -q -O "/bdh_drive/apps/$2" "$REPO_URL/bin/$2" 2>/dev/null
+    
+    # ஃபைல் நிஜமாகவே உள்ளதா (size > 0) என மட்டும் செக் செய்கிறோம்
+    if [ -s "/bdh_drive/apps/$2" ]; then
+        chmod +x "/bdh_drive/apps/$2"
+        ln -sf "/bdh_drive/apps/$2" "/bin/$2"
+        echo -e "${G}==>${W} Successfully installed $2 (Persistent)!"
     else
         echo -e "${R}==>${W} Error: Failed to download '$2'. Package may not exist."
         rm -f "/bdh_drive/apps/$2"
