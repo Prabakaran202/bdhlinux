@@ -1,9 +1,9 @@
 #!/bin/sh
-# BPM - BDH Package Manager (Secure Version)
+# BPM - BDH Package Manager (Direct GitHub Version)
 
 GITHUB_USER="BackendDeveloperHub"
-# HTTPS-க்குத் தேவையான SSL இல்லாததால் மீண்டும் HTTP-க்கே மாற்றப்பட்டுள்ளது
-REPO_URL="http://cdn.jsdelivr.net/gh/$GITHUB_USER/bdh-pkg@main"
+# JSDelivr-க்கு பதிலாக நேரடியாக GitHub Raw லிங்க் பயன்படுத்தப்பட்டுள்ளது
+REPO_URL="https://raw.githubusercontent.com/$GITHUB_USER/bdh-pkg/main"
 DB_FILE="/tmp/packages.txt"
 
 B="\033[1;34m"
@@ -22,11 +22,15 @@ fi
 
 if [ "$1" = "-Syu" ]; then
     echo -e "${B}::${W} Synchronizing package databases..."
-    wget -q -O "$DB_FILE" "$REPO_URL/packages.txt"
-    if [ -s "$DB_FILE" ]; then
-        echo -e "${G}==>${W} Database updated successfully."
+    # 2>/dev/null கொடுப்பதன் மூலம் TLS வார்னிங் திரையில் வராமல் மறைக்கப்படும்
+    if wget -q -O "$DB_FILE" "$REPO_URL/packages.txt" 2>/dev/null; then
+        if [ -s "$DB_FILE" ]; then
+            echo -e "${G}==>${W} Database updated successfully."
+        else
+            echo -e "${R}==>${W} Error: packages.txt is empty on server."
+        fi
     else
-        echo -e "${R}==>${W} Failed to fetch repository."
+        echo -e "${R}==>${W} Failed to fetch repository. Check Network."
     fi
     exit 0
 fi
@@ -38,7 +42,6 @@ if [ "$1" = "-Ss" ]; then
     exit 0
 fi
 
-# Remove (Uninstall) ஆப்ஷன்
 if [ "$1" = "-R" ]; then
     if [ -z "$2" ]; then echo -e "${R}==>${W} Error: No package specified."; exit 1; fi
     rm -f "/bdh_drive/apps/$2" "/bin/$2"
@@ -49,7 +52,6 @@ fi
 if [ "$1" = "-S" ]; then
     if [ -z "$2" ]; then echo -e "${R}==>${W} Error: No package specified."; exit 1; fi
     
-    # Path Traversal தடுப்பு
     case "$2" in
         */*|*..*) echo -e "${R}==>${W} Error: Invalid package name."; exit 1;;
     esac
@@ -58,8 +60,8 @@ if [ "$1" = "-S" ]; then
     mkdir -p /bdh_drive/apps
     echo -e "${B}::${W} Downloading from BDH Repository..."
     
-    # Wget 100% வெற்றி பெற்றதா என உறுதி செய்தல்
-    if wget -q -O "/bdh_drive/apps/$2" "$REPO_URL/bin/$2"; then
+    # நேரடி GitHub லிங்கில் இருந்து டவுன்லோட் செய்கிறோம்
+    if wget -q -O "/bdh_drive/apps/$2" "$REPO_URL/bin/$2" 2>/dev/null; then
         if [ -s "/bdh_drive/apps/$2" ]; then
             chmod +x "/bdh_drive/apps/$2"
             ln -sf "/bdh_drive/apps/$2" "/bin/$2"
@@ -69,7 +71,7 @@ if [ "$1" = "-S" ]; then
             rm -f "/bdh_drive/apps/$2"
         fi
     else
-        echo -e "${R}==>${W} Error: Failed to download '$2'. Check network or package name."
+        echo -e "${R}==>${W} Error: Failed to download '$2'. Package may not exist."
         rm -f "/bdh_drive/apps/$2"
     fi
     exit 0
