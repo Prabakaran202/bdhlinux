@@ -52,12 +52,17 @@ int main() {
         waitpid(setup_pid, NULL, 0); 
     }
     
-    // --- AUTOMATIC NETWORK SETUP WITH STATIC IP ---
-    printf("Initializing Network...\n");
+    // --- AUTOMATIC NETWORK & DISK DRIVERS SETUP ---
+    printf("Initializing Network and Drivers...\n");
     system("/bin/modprobe virtio_pci 2>/dev/null"); 
     system("/bin/modprobe virtio_net 2>/dev/null"); 
-    system("/bin/ifconfig lo up 2>/dev/null");
     
+    // டிஸ்க்கைப் புரிந்துகொள்ளத் தேவையான டிரைவர்கள்
+    system("/bin/modprobe virtio_blk 2>/dev/null"); 
+    system("/bin/modprobe ext4 2>/dev/null");
+    system("/bin/modprobe ext2 2>/dev/null");
+    
+    system("/bin/ifconfig lo up 2>/dev/null");
     system("/bin/ifconfig eth0 10.0.2.15 netmask 255.255.255.0 up 2>/dev/null");
     system("/bin/route add default gw 10.0.2.2 2>/dev/null");
     system("echo 'nameserver 8.8.8.8' > /etc/resolv.conf"); 
