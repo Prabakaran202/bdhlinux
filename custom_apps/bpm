@@ -2,8 +2,8 @@
 # BPM - BDH Package Manager (Secure Version)
 
 GITHUB_USER="BackendDeveloperHub"
-# [SECURITY FIX 1] HTTP மாற்றப்பட்டு HTTPS ஆக்கப்பட்டுள்ளது
-REPO_URL="https://cdn.jsdelivr.net/gh/$GITHUB_USER/bdh-pkg@main"
+# HTTPS-க்குத் தேவையான SSL இல்லாததால் மீண்டும் HTTP-க்கே மாற்றப்பட்டுள்ளது
+REPO_URL="http://cdn.jsdelivr.net/gh/$GITHUB_USER/bdh-pkg@main"
 DB_FILE="/tmp/packages.txt"
 
 B="\033[1;34m"
@@ -38,7 +38,7 @@ if [ "$1" = "-Ss" ]; then
     exit 0
 fi
 
-# புதிய Remove (Uninstall) ஆப்ஷன்
+# Remove (Uninstall) ஆப்ஷன்
 if [ "$1" = "-R" ]; then
     if [ -z "$2" ]; then echo -e "${R}==>${W} Error: No package specified."; exit 1; fi
     rm -f "/bdh_drive/apps/$2" "/bin/$2"
@@ -49,7 +49,7 @@ fi
 if [ "$1" = "-S" ]; then
     if [ -z "$2" ]; then echo -e "${R}==>${W} Error: No package specified."; exit 1; fi
     
-    # [SECURITY FIX 2] Path Traversal தடுப்பு (பெயரில் / அல்லது .. இருந்தால் தடுக்கப்படும்)
+    # Path Traversal தடுப்பு
     case "$2" in
         */*|*..*) echo -e "${R}==>${W} Error: Invalid package name."; exit 1;;
     esac
@@ -58,7 +58,7 @@ if [ "$1" = "-S" ]; then
     mkdir -p /bdh_drive/apps
     echo -e "${B}::${W} Downloading from BDH Repository..."
     
-    # [SECURITY FIX 3] Wget 100% வெற்றி பெற்றதா என உறுதி செய்தல்
+    # Wget 100% வெற்றி பெற்றதா என உறுதி செய்தல்
     if wget -q -O "/bdh_drive/apps/$2" "$REPO_URL/bin/$2"; then
         if [ -s "/bdh_drive/apps/$2" ]; then
             chmod +x "/bdh_drive/apps/$2"
