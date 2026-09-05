@@ -57,7 +57,6 @@ int main() {
     system("/bin/modprobe virtio_pci 2>/dev/null"); 
     system("/bin/modprobe virtio_net 2>/dev/null"); 
     
-    // டிஸ்க்கைப் புரிந்துகொள்ளத் தேவையான டிரைவர்கள்
     system("/bin/modprobe virtio_blk 2>/dev/null"); 
     system("/bin/modprobe ext4 2>/dev/null");
     system("/bin/modprobe ext2 2>/dev/null");
@@ -71,26 +70,77 @@ int main() {
     printf("Initializing Persistent Storage...\n");
     system("mkdir -p /bdh_drive");
     
-    // டிஸ்க் ஃபார்மேட் ஆகியுள்ளதா என மவுண்ட் செய்து பார்க்கிறோம்
     if (system("mount -t ext2 /dev/vda /bdh_drive 2>/dev/null") != 0) {
         printf("   -> Formatting new virtual disk...\n");
         system("/bin/mkfs.ext2 /dev/vda 2>/dev/null");
         system("mount -t ext2 /dev/vda /bdh_drive 2>/dev/null");
     }
     
-    // BPM ஆப்ஸ்களுக்கான போல்டரை உறுதி செய்து, ஷார்ட்கட்டுகளை ரீஸ்டோர் செய்கிறோம்
     system("mkdir -p /bdh_drive/apps");
     system("ln -sf /bdh_drive/apps/* /bin/ 2>/dev/null");
-    // ---------------------------------------------------------
 
     // --- OS NAME CHANGED HERE ---
-    printf("======================================\n");
+    printf("\n======================================\n");
     printf("  Welcome to BDH Linux\n");
     printf("======================================\n");
 
+    // --- NEW DYNAMIC LOGIN SYSTEM ---
+    char saved_pass[50] = {0};
+    FILE *pf = fopen("/bdh_drive/root_pass.txt", "r");
+    
+    if (pf == NULL) {
+        printf("\n[ First Boot: Setup Root Password ]\n");
+        while (1) {
+            char *new_pass = getpass("Set Root Password: ");
+            char temp_pass[50];
+            strcpy(temp_pass, new_pass);
+            
+            char *confirm = getpass("Retype Password: ");
+            if (strcmp(temp_pass, confirm) == 0 && strlen(temp_pass) > 0) {
+                pf = fopen("/bdh_drive/root_pass.txt", "w");
+                if(pf) {
+                    fprintf(pf, "%s", temp_pass);
+                    fclose(pf);
+                    strcpy(saved_pass, temp_pass);
+                    printf("Password saved securely!\n\n");
+                    break;
+                }
+            } else {
+                printf("Passwords do not match or empty. Try again.\n");
+            }
+        }
+    } else {
+        fgets(saved_pass, sizeof(saved_pass), pf);
+        fclose(pf);
+        saved_pass[strcspn(saved_pass, "\n")] = 0;
+    }
+
+    int logged_in = 0;
+    char username[50];
+    
+    while (!logged_in) {
+        printf("bdhlinux login: ");
+        fflush(stdout);
+        
+        if (fgets(username, sizeof(username), stdin) == NULL) continue;
+        username[strcspn(username, "\n")] = 0; 
+        
+        if (strlen(username) == 0) continue;
+
+        char *pass = getpass("Password: ");
+        
+        if (strcmp(username, "root") == 0 && strcmp(pass, saved_pass) == 0) {
+            printf("\nLast login: Today on ttyAMA0\n");
+            logged_in = 1;
+        } else {
+            printf("\nLogin incorrect\n\n");
+        }
+    }
+    // -------------------------
+
     while (1) {
         // --- PROMPT CHANGED HERE ---
-        printf("bdhlinux # ");
+        printf("\n[root@bdhlinux ~]# ");
         fflush(stdout);
         if (fgets(command, sizeof(command), stdin) == NULL) { clearerr(stdin); continue; }
         command[strcspn(command, "\n")] = 0;
