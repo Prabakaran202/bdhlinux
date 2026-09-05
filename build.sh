@@ -111,5 +111,21 @@ EOF
     echo -e "\n✅ Success! 'bdh-linux.iso' is ready for Ventoy!"
 else
     echo -e "\n✅ Success! ARM OS is ready."
-    echo "Run: qemu-system-aarch64 -M virt -cpu cortex-a53 -nographic -kernel bzImage-arm -initrd initramfs.cpio.gz -append \"console=ttyAMA0 init=/init\" -m 256M -netdev user,id=net0 -device virtio-net-pci,netdev=net0"
+    
+    # --- AUTO-GENERATE LAUNCHER SCRIPT ---
+    echo "   -> Creating launcher script (start_bdh.sh)..."
+    cat << 'EOF' > start_bdh.sh
+#!/bin/bash
+echo "Starting BDH Linux (ARM Environment)..."
+
+if [ ! -f "bdh_disk.img" ]; then
+    echo "First boot detected. Creating 512MB Persistence Disk..."
+    dd if=/dev/zero of=bdh_disk.img bs=1M count=512 status=none
+fi
+
+qemu-system-aarch64 -M virt -cpu cortex-a53 -nographic -kernel bzImage-arm -initrd initramfs.cpio.gz -append "console=ttyAMA0 init=/init" -m 256M -netdev user,id=net0 -device virtio-net-pci,netdev=net0 -drive file=bdh_disk.img,format=raw,if=virtio
+EOF
+    
+    chmod +x start_bdh.sh
+    echo -e "✅ Launcher ready! Just run: ./start_bdh.sh"
 fi
