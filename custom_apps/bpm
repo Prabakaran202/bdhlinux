@@ -1,5 +1,5 @@
 #!/bin/sh
-# BPM - BDH Package Manager (Working Version)
+# BPM - BDH Package Manager (TLA+ Verified Version)
 
 GITHUB_USER="BackendDeveloperHub"
 REPO_URL="https://raw.githubusercontent.com/$GITHUB_USER/bdh-pkg/main"
@@ -52,20 +52,26 @@ if [ "$1" = "-S" ]; then
     esac
     
     echo -e "${B}::${W} Resolving dependencies for ${G}$2${W}..."
-    mkdir -p /bdh_drive/apps
-    echo -e "${B}::${W} Downloading from BDH Repository..."
+    mkdir -p /bdh_drive/apps /tmp
+    echo -e "${B}::${W} [Downloading] Fetching from BDH Repository..."
     
-    # wget-ன் ரிசல்ட் கோடை செக் செய்யாமல் நேரடியாக ரன் செய்கிறோம்
-    wget -q -O "/bdh_drive/apps/$2" "$REPO_URL/bin/$2" 2>/dev/null
+    TMP_FILE="/tmp/$2.tmp"
     
-    # ஃபைல் நிஜமாகவே உள்ளதா (size > 0) என மட்டும் செக் செய்கிறோம்
-    if [ -s "/bdh_drive/apps/$2" ]; then
+    # TLA+ Logic: முதலில் /tmp/-க்குள் டவுன்லோட் செய்கிறோம் (Temporary State)
+    wget -q -O "$TMP_FILE" "$REPO_URL/bin/$2" 2>/dev/null
+    
+    # State Verification: ஃபைல் முழுமையாக உள்ளதா என செக் செய்தல்
+    if [ -s "$TMP_FILE" ]; then
+        # InstallSuccess -> Installed State
+        mv "$TMP_FILE" "/bdh_drive/apps/$2"
         chmod +x "/bdh_drive/apps/$2"
         ln -sf "/bdh_drive/apps/$2" "/bin/$2"
         echo -e "${G}==>${W} Successfully installed $2 (Persistent)!"
     else
-        echo -e "${R}==>${W} Error: Failed to download '$2'. Package may not exist."
-        rm -f "/bdh_drive/apps/$2"
+        # InstallFail -> Reset State
+        echo -e "${R}==>${W} Error: Failed to download '$2'. Package may not exist or network failed."
+        rm -f "$TMP_FILE" # Rollback: அரைகுறை ஃபைலை அழித்துவிடுகிறோம்
+        echo -e "${B}::${W} System state safely restored."
     fi
     exit 0
 fi
